@@ -229,7 +229,7 @@ lazy val rootSettings = Seq(
 )
 
 lazy val root = (project in file("."))
-    .aggregate(appkit, common, javaClientGenerated, libApi, libImpl)
+    .dependsOn(appkit, common, javaClientGenerated, libApi, libImpl)
     .settings(commonSettings ++ testSettings, rootSettings)
     .settings(publish / aggregate := false)
     .settings(publishLocal / aggregate := false)
