@@ -23,7 +23,7 @@ import java.lang.{Long => JLong, String => JString}
 import java.math.BigInteger
 import java.util.{List => JList, Map => JMap}
 
-import sigmastate.utils.Helpers._  // don't remove, required for Scala 2.11
+import sigmastate.utils.Helpers._ // don't remove, required for Scala 2.11
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DiffieHellmanTupleProverInput}
@@ -44,9 +44,9 @@ import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
 abstract class Iso[A, B] {
   def to(a: A): B
   def from(b: B): A
-  def andThen[C](iso: Iso[B,C]): Iso[A,C] = ComposeIso(iso, this)
+  def andThen[C](iso: Iso[B, C]): Iso[A, C] = ComposeIso(iso, this)
 }
-final case class InverseIso[A,B](iso: Iso[A,B]) extends Iso[B,A] {
+final case class InverseIso[A, B](iso: Iso[A, B]) extends Iso[B, A] {
   override def to(a: B): A = iso.from(a)
   override def from(b: A): B = iso.to(b)
 }
@@ -55,8 +55,7 @@ final case class ComposeIso[A, B, C](iso2: Iso[B, C], iso1: Iso[A, B]) extends I
   def to(a: A): C = iso2.to(iso1.to(a))
 }
 
-trait LowPriorityIsos {
-}
+trait LowPriorityIsos {}
 
 object Iso extends LowPriorityIsos {
   implicit def identityIso[A]: Iso[A, A] = new Iso[A, A] {
@@ -65,7 +64,7 @@ object Iso extends LowPriorityIsos {
     override def from(b: A): A = b
   }
 
-  implicit def inverseIso[A,B](implicit iso: Iso[A,B]): Iso[B,A] = InverseIso[A,B](iso)
+  implicit def inverseIso[A, B](implicit iso: Iso[A, B]): Iso[B, A] = InverseIso[A, B](iso)
 
   implicit val jlongToLong: Iso[JLong, Long] = new Iso[JLong, Long] {
     override def to(b: JLong): Long = b
@@ -85,13 +84,13 @@ object Iso extends LowPriorityIsos {
   implicit val isoErgoValueToSValue: Iso[ErgoValue[_], EvaluatedValue[SType]] = new Iso[ErgoValue[_], EvaluatedValue[SType]] {
     override def to(x: ErgoValue[_]): EvaluatedValue[SType] =
       Constant(x.getValue.asInstanceOf[SType#WrappedType], Evaluation.rtypeToSType(x.getType.getRType))
-      
+
     override def from(x: EvaluatedValue[SType]): ErgoValue[_] = {
       new ErgoValue(x.value, new ErgoType(Evaluation.stypeToRType(x.tpe)))
     }
   }
 
-  implicit def isoJMapToMap[K,V1,V2](iso: Iso[V1, V2]): Iso[JMap[K, V1], scala.collection.Map[K,V2]] = new Iso[JMap[K, V1], scala.collection.Map[K,V2]] {
+  implicit def isoJMapToMap[K, V1, V2](iso: Iso[V1, V2]): Iso[JMap[K, V1], scala.collection.Map[K, V2]] = new Iso[JMap[K, V1], scala.collection.Map[K, V2]] {
     override def to(a: JMap[K, V1]): scala.collection.Map[K, V2] = {
       JavaConversions.mapAsScalaMap(a).mapValues(iso.to)
     }
@@ -131,7 +130,7 @@ object Iso extends LowPriorityIsos {
 
       override def from(bs: IndexedSeq[B]): JList[A] = {
         val res = new util.ArrayList[A](bs.length)
-        for ( a <- bs.map(itemIso.from) ) res.add(a)
+        for (a <- bs.map(itemIso.from)) res.add(a)
         res
       }
     }
@@ -158,7 +157,7 @@ object Iso extends LowPriorityIsos {
 
 object JavaHelpers {
   implicit class UniversalConverter[A](val x: A) extends AnyVal {
-    def convertTo[B](implicit iso: Iso[A,B]): B = iso.to(x)
+    def convertTo[B](implicit iso: Iso[A, B]): B = iso.to(x)
   }
 
   implicit class StringExtensions(val source: String) extends AnyVal {
@@ -241,19 +240,16 @@ object JavaHelpers {
     res
   }
 
-  def createBoxCandidate(
-        value: Long, tree: ErgoTree,
-        tokens: util.List[ErgoToken],
-        registers: util.List[ErgoValue[_]], creationHeight: Int): ErgoBoxCandidate = {
+  def createBoxCandidate(value: Long, tree: ErgoTree, tokens: util.List[ErgoToken], registers: util.List[ErgoValue[_]], creationHeight: Int): ErgoBoxCandidate = {
     import ErgoBox.nonMandatoryRegisters
     val nRegs = registers.size()
-    Preconditions.checkArgument(nRegs <= nonMandatoryRegisters.length,
-       "Too many additional registers %d. Max allowed %d", nRegs, nonMandatoryRegisters.length)
+    Preconditions.checkArgument(nRegs <= nonMandatoryRegisters.length, "Too many additional registers %d. Max allowed %d", nRegs, nonMandatoryRegisters.length)
     val ts = tokens.convertTo[Coll[(TokenId, Long)]]
-    val rs = toIndexedSeq(registers).zipWithIndex.map { case (ergoValue, i) =>
-      val id = ErgoBox.nonMandatoryRegisters(i)
-      val value = Iso.isoErgoValueToSValue.to(ergoValue)
-      id -> value
+    val rs = toIndexedSeq(registers).zipWithIndex.map {
+      case (ergoValue, i) =>
+        val id = ErgoBox.nonMandatoryRegisters(i)
+        val value = Iso.isoErgoValueToSValue.to(ergoValue)
+        id -> value
     }.toMap
 
     new ErgoBoxCandidate(value, tree, creationHeight, ts, rs)
@@ -273,6 +269,10 @@ object JavaHelpers {
 
   def createUnsignedInput(boxIdBytes: Array[Byte]): UnsignedInput = {
     new UnsignedInput(ADKey @@ boxIdBytes)
+  }
+
+  def createDataInput(boxIdBytes: Array[Byte]): DataInput = {
+    DataInput(ADKey @@ boxIdBytes)
   }
 
   def collRType[T](tItem: RType[T]): RType[Coll[T]] = special.collection.collRType(tItem)
@@ -296,12 +296,9 @@ object JavaHelpers {
     ErgoTreeSerializer.DefaultSerializer.deserializeHeaderWithTreeBytes(r)._4
   }
 
-  def createDiffieHellmanTupleProverInput(g:EcPointType, h:EcPointType, u:EcPointType, v:EcPointType, x:BigInteger) = {
+  def createDiffieHellmanTupleProverInput(g: EcPointType, h: EcPointType, u: EcPointType, v: EcPointType, x: BigInteger) = {
     val dht = ProveDHTuple(g, h, u, v)
     DiffieHellmanTupleProverInput(x, dht)
   }
 
 }
-
-
-

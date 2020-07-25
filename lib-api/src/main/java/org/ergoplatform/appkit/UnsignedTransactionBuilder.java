@@ -26,6 +26,8 @@ public interface UnsignedTransactionBuilder {
      */
     UnsignedTransactionBuilder boxesToSpend(List<InputBox> boxes);
 
+    UnsignedTransactionBuilder withDataInputs(List<InputBox> boxes);
+
     /**
      * Specifies output boxes of the transaction. After this transaction is
      * {@link UnsignedTransactionBuilder#build() built}, {@link ErgoProver#sign(UnsignedTransaction)} signed,

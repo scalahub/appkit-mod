@@ -14,7 +14,8 @@ public class UnsignedTransactionImpl implements UnsignedTransaction {
     private ErgoLikeStateContext _stateContext;
 
     public UnsignedTransactionImpl(
-            UnsignedErgoLikeTransaction tx, List<ErgoBox> boxesToSpend,
+            UnsignedErgoLikeTransaction tx,
+            List<ErgoBox> boxesToSpend,
             List<ErgoBox> dataBoxes, ErgoLikeStateContext stateContext) {
         _tx = tx;
         _boxesToSpend = boxesToSpend;

@@ -27,6 +27,7 @@ public class UnsignedTransactionBuilderImpl implements UnsignedTransactionBuilde
     ArrayList<DataInput> _dataInputs = new ArrayList<>();
     ArrayList<ErgoBoxCandidate> _outputCandidates = new ArrayList<>();
     private List<InputBoxImpl> _inputBoxes;
+    private List<InputBoxImpl> _dataInputBoxes;
     private long _feeAmount;
     private ErgoAddress _changeAddress;
     private ErgoValue<?>[] _registers = {};
@@ -45,6 +46,19 @@ public class UnsignedTransactionBuilderImpl implements UnsignedTransactionBuilde
                 .collect(Collectors.toList());
         _inputs.addAll(items);
         _inputBoxes = inputBoxes.stream()
+                .map(b -> (InputBoxImpl)b)
+                .collect(Collectors.toList());
+        return this;
+    }
+
+    @Override
+    public UnsignedTransactionBuilder withDataInputs(List<InputBox> inputBoxes) {
+        List<DataInput> items = inputBoxes
+                .stream()
+                .map(box -> JavaHelpers.createDataInput(box.getId().getBytes()))
+                .collect(Collectors.toList());
+        _dataInputs.addAll(items);
+        _dataInputBoxes = inputBoxes.stream()
                 .map(b -> (InputBoxImpl)b)
                 .collect(Collectors.toList());
         return this;
@@ -128,9 +142,11 @@ public class UnsignedTransactionBuilderImpl implements UnsignedTransactionBuilde
                 new UnsignedErgoLikeTransaction(inputs, dataInputs, outputCandidates);
         List<ErgoBox> boxesToSpend =
                 _inputBoxes.stream().map(b -> b.getErgoBox()).collect(Collectors.toList());
+        List<ErgoBox> dataInputBoxes =
+                _dataInputBoxes.stream().map(b -> b.getErgoBox()).collect(Collectors.toList());
         ErgoLikeStateContext stateContext = createErgoLikeStateContext();
 
-        return new UnsignedTransactionImpl(tx, boxesToSpend, new ArrayList<>(), stateContext);
+        return new UnsignedTransactionImpl(tx, boxesToSpend, dataInputBoxes, stateContext);
     }
 
     private ErgoLikeStateContext createErgoLikeStateContext() {
